@@ -1,0 +1,1023 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Iván Kovalsky · Full Stack Engineer</title>
+<meta name="description" content="Iván Kovalsky — Full Stack Engineer y desarrollo de software aumentado con IA. .NET, Node, React, infraestructura y ciberseguridad. Un portfolio pixel art que se construye bloque por bloque.">
+<meta name="theme-color" content="#17142b">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Iván Kovalsky · Full Stack Engineer">
+<meta property="og:description" content="Iván Kovalsky — Full Stack Engineer y desarrollo de software aumentado con IA. .NET, Node, React, infraestructura y ciberseguridad. Un portfolio pixel art que se construye bloque por bloque.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%2317142b'/%3E%3Crect x='3' y='3' width='2' height='10' fill='%23f3ecdc'/%3E%3Crect x='7' y='3' width='2' height='10' fill='%23f3ecdc'/%3E%3Crect x='9' y='7' width='2' height='2' fill='%23f3ecdc'/%3E%3Crect x='11' y='3' width='2' height='4' fill='%23f3ecdc'/%3E%3Crect x='11' y='9' width='2' height='4' fill='%23f3ecdc'/%3E%3Crect x='13' y='11' width='2' height='2' fill='%23ff9a3c'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Silkscreen&family=VT323&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: un nivel de videojuego de una sola columna — el nombre se construye en el hero, cada sección es un "mundo" con bordes de píxel duros. Look nocturno único, a propósito. */
+:root{
+  color-scheme:dark;
+  --bg:#17142b; --grid:#1f1b3a; --surface:#221e3d; --surface-2:#2b2650;
+  --ink:#f3ecdc; --muted:#a8a1c9; --dim:#6b6596; --line:#3d3668; --shadow:#0b0919;
+  --accent:#ff9a3c; --accent-ink:#1d1206; --cyan:#5ce1e6; --ok:#7ee081; --warn:#ffd166;
+  --skin:#f2cba8; --hair:#2a1a12; --bug:#ff5d73;
+  --display:"Pixelify Sans",ui-monospace,monospace;
+  --label:"Silkscreen",ui-monospace,monospace;
+  --term:"VT323",ui-monospace,monospace;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --px:4px;
+}
+*{box-sizing:border-box}
+body{
+  background-color:var(--bg);color:var(--ink);font:16px/1.6 var(--body);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;padding-inline:20px;padding-block:0
+}
+.wrap{max-width:960px;margin-inline:auto}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--cyan);outline-offset:4px}
+h1,h2,h3{font-family:var(--display);line-height:1.1;text-wrap:balance;margin:0;font-weight:700}
+.lbl{font:12px/1.2 var(--label);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+canvas{image-rendering:pixelated;display:block;max-width:100%}
+
+/* borde de píxel con esquinas recortadas */
+.px{background:var(--surface);
+  box-shadow:0 calc(-1*var(--px)) 0 0 var(--line),0 var(--px) 0 0 var(--line),calc(-1*var(--px)) 0 0 0 var(--line),var(--px) 0 0 0 var(--line),
+  calc(2*var(--px)) calc(2*var(--px)) 0 0 var(--shadow);margin:var(--px)}
+
+/* nav */
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);border-bottom:var(--px) solid var(--line);margin-inline:-20px;padding-inline:20px}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:58px}
+.brand{font:16px var(--display);text-decoration:none;display:flex;align-items:center;gap:10px}
+.brand i{width:10px;height:10px;background:var(--ok);animation:blink 1.2s steps(1) infinite}
+nav ul{display:flex;gap:18px;list-style:none;margin:0;padding:0;font:12px var(--label)}
+nav ul a{text-decoration:none;color:var(--muted)}
+nav ul a:hover{color:var(--accent)}
+@media (max-width:600px){nav ul{gap:12px;font-size:10px}nav ul .hide-sm{display:none}}
+
+/* hero */
+.hero{padding-block:48px 56px;display:grid;gap:24px}
+.stage{position:relative;min-width:0}
+#heroCanvas{cursor:pointer}
+.bubble{position:absolute;font:12px var(--label);background:var(--ink);color:var(--bg);padding:6px 10px;white-space:nowrap;pointer-events:none;
+  box-shadow:0 -3px 0 0 var(--ink),0 3px 0 0 var(--ink),-3px 0 0 0 var(--ink),3px 0 0 0 var(--ink);transition:opacity .2s;opacity:0}
+.bubble.on{opacity:1}
+.bubble::after{content:"";position:absolute;left:-9px;bottom:2px;width:6px;height:6px;background:var(--ink)}
+.skip{position:absolute;right:0;top:0;font:11px var(--label);color:var(--muted);background:none;border:0;cursor:pointer;padding:4px}
+.skip kbd{font:inherit;border:2px solid var(--line);padding:1px 5px;margin-left:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.tagline{margin:0;font:14px var(--label);color:var(--cyan);letter-spacing:.04em}
+.hero .lead{font-size:clamp(18px,2.4vw,21px);max-width:40ch;margin:0;color:var(--muted)}
+.hero .lead b{color:var(--ink);font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.btn{font:13px var(--label);text-decoration:none;padding:12px 18px;background:var(--surface-2);color:var(--ink);border:0;cursor:pointer;
+  box-shadow:0 -4px 0 0 var(--line),0 4px 0 0 var(--line),-4px 0 0 0 var(--line),4px 0 0 0 var(--line),8px 8px 0 0 var(--shadow);margin:4px;transition:transform .08s}
+.btn.primary{background:var(--accent);color:var(--accent-ink);box-shadow:0 -4px 0 0 #c46a17,0 4px 0 0 #c46a17,-4px 0 0 0 #c46a17,4px 0 0 0 #c46a17,8px 8px 0 0 var(--shadow)}
+.btn:hover{transform:translate(-2px,-2px)}
+.btn:active{transform:translate(4px,4px)}
+.hud{display:flex;flex-wrap:wrap;gap:10px 28px;font:12px var(--label);color:var(--muted);padding-top:18px;border-top:4px dotted var(--line)}
+.hud b{color:var(--ink);font-weight:400}
+
+section{padding-block:56px}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:28px;flex-wrap:wrap}
+.sec-head h2{font-size:clamp(30px,5vw,44px)}
+.world{color:var(--accent)}
+
+/* proyectos */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+@media (max-width:720px){.grid{grid-template-columns:1fr}}
+.proj{padding:22px;display:grid;gap:14px;align-content:start;transition:transform .12s}
+.proj:hover{transform:translate(-3px,-3px)}
+.proj-top{display:flex;gap:16px;align-items:center}
+.proj-top canvas{width:60px;height:60px;flex:none;background:var(--surface-2)}
+.proj h3{font-size:22px}
+.state{font:11px var(--label);display:flex;align-items:center;gap:8px;color:var(--muted);margin-top:4px}
+.state i{width:8px;height:8px;background:var(--dim)}
+.state.ok i{background:var(--ok);animation:blink 1.6s steps(1) infinite}
+.state.warn i{background:var(--warn);animation:blink .9s steps(1) infinite}
+.proj p{margin:0;color:var(--muted)}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.kpis{display:flex;flex-wrap:wrap;gap:6px 18px;font:11px var(--label);color:var(--muted)}
+.kpis b{color:var(--warn);font-weight:400;font-size:13px}
+ .proj.wide{grid-column:1/-1}
+.feat{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 9%,var(--surface)),var(--surface) 55%)}
+.feat .proj-top canvas{width:76px;height:76px}
+.feat h3{font-size:clamp(28px,4.4vw,38px)}
+.feat > p{font-size:17px;max-width:68ch}
+.kpis.big{gap:10px;font-size:11px}
+.kpis.big span{background:var(--surface-2);border:2px solid var(--line);padding:6px 10px}
+.kpis.big b{font:18px var(--display);display:block;color:var(--warn)}
+.mods{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.mods li{display:grid;gap:2px;padding:10px 12px 10px 14px;background:var(--bg);border-left:4px solid var(--accent);min-width:0;transition:border-color .1s,transform .1s}
+.mods li:hover{border-color:var(--cyan);transform:translateX(2px)}
+.mods b{font:15px var(--display);color:var(--ink)}
+.mods span{font-size:14px;color:var(--muted);line-height:1.45}
+.plinks{display:flex;flex-wrap:wrap;gap:10px;margin-top:auto;padding-top:4px}
+.plinks a{font:12px var(--label);text-decoration:none;color:var(--accent-ink);background:var(--accent);padding:6px 10px}
+.plinks a:hover{background:var(--warn)}
+.plinks .lock{font:11px var(--label);color:var(--dim);border:2px dashed var(--line);padding:4px 8px}
+.proj{display:flex;flex-direction:column}
+.tag{font:11px var(--label);padding:3px 8px;background:var(--surface-2);color:var(--ink);border:2px solid var(--line)}
+
+/* red */
+.net{padding:16px}
+#netCanvas{width:100%;height:300px}
+.netinfo{display:flex;flex-wrap:wrap;gap:10px 28px;margin-top:16px;padding-inline:6px;font:12px var(--label);color:var(--muted)}
+.netinfo b{color:var(--cyan);font-weight:400}
+.note{color:var(--muted);max-width:60ch;margin:0 0 20px}
+
+/* ficha */
+.ficha{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:24px}
+@media (max-width:760px){.ficha{grid-template-columns:1fr}}
+.card{padding:24px}
+.who{display:grid;gap:18px;justify-items:start}
+#avatar{width:128px;height:128px;background:var(--surface-2);cursor:pointer}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font:12px var(--label);margin:0}
+.kv dt{color:var(--muted)}.kv dd{margin:0;color:var(--ink)}
+.stats{display:grid;gap:14px}
+.stat{display:grid;gap:6px}
+.stat .top{display:flex;justify-content:space-between;font:12px var(--label)}
+.stat .top span:last-child{color:var(--muted)}
+.seg{display:grid;grid-template-columns:repeat(10,1fr);gap:3px}
+.seg i{height:12px;background:var(--surface-2)}
+.seg i.on{background:var(--accent)}
+.inv-title{margin:24px 0 12px}
+.slot.ai b{color:var(--accent)}.slot.sec b{color:var(--ok)}
+.badges{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.badges li{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:8px 10px;background:var(--surface-2);border:3px solid var(--line);min-width:0}
+.badges i{grid-row:span 2;font:20px var(--display);color:var(--warn);font-style:normal}
+.badges b{font:14px var(--display)}
+.badges span{font-size:13px;color:var(--muted);line-height:1.3}
+.inv{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px}
+.slot{aspect-ratio:1;max-width:100%;background:var(--surface-2);border:3px solid var(--line);display:grid;place-items:center;align-content:center;gap:2px;transition:border-color .1s}
+.slot:hover{border-color:var(--accent)}
+.slot b{font:22px/1 var(--display);color:var(--cyan)}
+.slot span{font:9px var(--label);color:var(--muted);text-align:center}
+.special{margin-top:22px;padding-top:16px;border-top:4px dotted var(--line)}
+.special p{margin:6px 0 0;font-size:17px}
+
+/* misiones */
+.quests{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.quest{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px;align-items:center;padding:16px 20px}
+.check{width:22px;height:22px;border:3px solid var(--line);display:grid;place-items:center;font:14px var(--display);color:var(--bg)}
+.done .check{background:var(--ok);border-color:var(--ok)}
+.doing .check{border-color:var(--warn);animation:blink 1s steps(1) infinite}
+.quest b{font:18px var(--display);display:block}
+.quest span{color:var(--muted);font-size:15px}
+.xp{font:12px var(--label);color:var(--accent);white-space:nowrap;text-align:right}
+.xp small{display:block;color:var(--muted);font-size:10px}
+@media (max-width:560px){.quest{grid-template-columns:auto minmax(0,1fr)}.xp{grid-column:2;text-align:left}}
+
+/* contacto */
+.contact{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.4fr);gap:24px}
+@media (max-width:760px){.contact{grid-template-columns:1fr}}
+.links{display:grid;gap:16px;align-content:start}
+.link{display:flex;justify-content:space-between;gap:12px;padding:14px 16px;text-decoration:none;font:12px var(--label)}
+a.link:hover{color:var(--accent)}
+.link span:last-child{color:var(--muted);overflow-wrap:anywhere;text-align:right;text-transform:none}
+.crt{background:#0d0b1c;position:relative;display:flex;flex-direction:column;min-height:360px;overflow:hidden}
+.crt::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 2px,transparent 2px 4px)}
+.crt-bar{display:flex;justify-content:space-between;padding:10px 14px;border-bottom:3px solid var(--line);font:11px var(--label);color:var(--muted)}
+.out{flex:1;padding:12px 16px;overflow-y:auto;max-height:320px;white-space:pre-wrap;overflow-wrap:anywhere;font:21px/1.15 var(--term);color:#d8f5d8;text-shadow:0 0 6px rgba(126,224,129,.35)}
+.out .p{color:var(--accent)}.out .d{color:var(--dim)}.out .c{color:var(--cyan)}.out .g{color:var(--warn)}
+form.cmd{display:flex;gap:10px;padding:8px 16px 12px;align-items:center;font:21px var(--term)}
+form.cmd label{color:var(--accent);white-space:nowrap}
+form.cmd input{flex:1;min-width:0;background:transparent;border:0;color:#d8f5d8;font:inherit;outline:none;caret-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 16px;position:relative;z-index:1}
+.chips button{font:11px var(--label);background:var(--surface-2);color:var(--ink);border:2px solid var(--line);padding:5px 10px;cursor:pointer}
+.chips button:hover{border-color:var(--accent);color:var(--accent)}
+
+footer{padding-block:32px 56px;border-top:4px solid var(--line);font:12px var(--label);color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#secrets b{color:var(--warn);font-weight:400}
+#rain{position:fixed;inset:0;pointer-events:none;z-index:50;width:100%;height:100%}
+
+/* nav extra: nivel, sonido, barra de XP */
+.navr{display:flex;align-items:center;gap:14px}
+.lvl{font:11px var(--label);color:var(--warn);white-space:nowrap}
+.snd{font:11px var(--label);background:var(--surface-2);color:var(--muted);border:2px solid var(--line);padding:4px 8px;cursor:pointer}
+.snd[aria-pressed="true"]{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
+.xpbar{height:6px;background:var(--surface-2);margin-inline:-20px}
+.xpbar i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s steps(3)}
+@media (max-width:600px){.lvl{display:none}}
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 84px);transform:translateX(-50%);z-index:40;font:14px var(--label);background:var(--warn);color:var(--accent-ink);padding:10px 16px;white-space:nowrap;
+  box-shadow:0 -4px 0 0 #c99a2e,0 4px 0 0 #c99a2e,-4px 0 0 0 #c99a2e,4px 0 0 0 #c99a2e,8px 8px 0 0 var(--shadow);animation:pop .35s steps(4)}
+@keyframes pop{from{transform:translate(-50%,-14px);opacity:0}}
+
+/* cielo y ciudad */
+#sky{width:100%;height:112px;margin-top:-8px}
+
+/* minijuego */
+.game{position:relative;padding:0;overflow:hidden}
+#game{width:100%;height:320px;touch-action:manipulation;cursor:crosshair;background:var(--surface)}
+.ghud{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;padding:12px 16px;border-top:4px solid var(--line);font:12px var(--label);color:var(--muted);font-variant-numeric:tabular-nums}
+.ghud b{color:var(--ink);font-weight:400}
+.ghud .hearts{color:var(--bug)}
+.overlay{position:absolute;inset:0 0 auto 0;height:320px;display:grid;place-content:center;justify-items:center;gap:12px;text-align:center;padding:20px;background:rgba(23,20,43,.78)}
+.overlay h3{font-size:clamp(26px,5vw,38px);color:var(--accent)}
+.overlay p{margin:0;max-width:38ch;color:var(--muted)}
+.overlay .final{font:14px var(--label);color:var(--warn)}
+
+@keyframes blink{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<style>html,body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top"><i></i>ivan.kovalsky</a>
+    <ul>
+      <li><a href="#proyectos">Proyectos</a></li>
+      <li class="hide-sm"><a href="#red">Red</a></li>
+      <li><a href="#ficha">Sobre mí</a></li>
+      <li class="hide-sm"><a href="#misiones">Misiones</a></li>
+      <li class="hide-sm"><a href="#juego">Juego</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+    <div class="navr">
+      <span class="lvl" id="lvl">LVL 1</span>
+      <button class="snd" id="snd" type="button" aria-pressed="false" title="Sonido 8-bit">♪ OFF</button>
+    </div>
+  </div>
+  <div class="xpbar" aria-hidden="true"><i id="xp"></i></div>
+</nav>
+<div class="toast" id="toast" hidden></div>
+
+<main class="wrap" id="top">
+  <header class="hero">
+    <div class="stage" id="stage">
+      <h1 class="sr">Ivan Kovalsky</h1>
+      <canvas id="heroCanvas" aria-hidden="true"></canvas>
+      <div class="bubble" id="bubble">deploy ok ✓</div>
+      <button class="skip" id="skip" type="button">Saltar<kbd>Esc</kbd></button>
+    </div>
+    <canvas id="sky" aria-label="Skyline pixelado de barrio con el tren pasando"></canvas>
+    <p class="tagline">Full Stack Engineer · Desarrollo de software aumentado con IA</p>
+    <p class="lead">Diseño, construyo y opero productos completos, de la arquitectura al deploy. Vengo de la <b>ciberseguridad</b> y hoy lidero solo el área de tecnología de una <b>mutual de salud</b>: software, infraestructura y redes. Uso IA como herramienta de ingeniería, no como producto.</p>
+    <div class="row">
+      <a class="btn primary" href="#proyectos">▶ Jugar · ver proyectos</a>
+      <a class="btn" href="https://github.com/IvanKovalsky" target="_blank" rel="noopener">GitHub ↗</a>
+      <a class="btn" href="https://ar.linkedin.com/in/ivankovalsky2" target="_blank" rel="noopener">LinkedIn ↗</a>
+    </div>
+    <div class="hud">
+      <span>Player <b>Ivan</b></span>
+      <span>Base <b>Buenos Aires, AR</b></span>
+      <span>Stack <b>.NET · Node · React · IA</b></span>
+      <span>Código <b>100K+ líneas</b></span>
+      <span>Estado <b style="color:var(--ok)">abierto a proyectos</b></span>
+    </div>
+  </header>
+
+  <section id="proyectos">
+    <div class="sec-head">
+      <div><p class="lbl"><span class="world">Mundo 1-1</span></p><h2>Proyectos</h2></div>
+      <span class="lbl">6 niveles · 100K+ líneas en GitHub</span>
+    </div>
+    <div class="grid">
+      <article class="proj px wide feat">
+        <div class="proj-top"><canvas data-icon="card"></canvas><div><p class="lbl" style="margin:0 0 4px;color:var(--warn)">★ Proyecto principal</p><h3>MutualGest</h3><div class="state ok"><i></i>En producción</div></div></div>
+        <p>La plataforma digital de una mutual de salud con más de 300.000 pacientes registrados. Socios, pacientes de obras sociales, operadores, laboratorio y auditores externos trabajan sobre el mismo sistema, desde la web, como app instalable o como app Android. Lo diseñé, lo programé y lo mantengo solo.</p>
+        <div class="kpis big">
+          <span><b>300K+</b> pacientes registrados</span><span><b>44</b> pantallas</span><span><b>23</b> módulos de API</span><span><b>28</b> suites de tests</span><span><b>58K</b> líneas</span><span><b>7.903</b> socios en el padrón</span>
+        </div>
+        <ul class="mods">
+          <li><b>Portal del socio</b><span>Cuotas, grupo familiar, comprobantes y credencial digital.</span></li>
+          <li><b>Portal del paciente</b><span>Pacientes de obras sociales: turnos, estudios y resultados.</span></li>
+          <li><b>Chat con bot</b><span>Mesa de ayuda por sectores. El guión del bot se edita y se prueba desde el panel.</span></li>
+          <li><b>Turnos</b><span>Agente on-premise que sincroniza turnos a la nube, aviso al asignar y recordatorio con confirmación.</span></li>
+          <li><b>Laboratorio y estudios</b><span>Resultados, ECG, ecografías y radiografías en el portal, con aviso agrupado por mail.</span></li>
+          <li><b>Autorizaciones</b><span>Lo que se autoriza en el chat queda guardado para mostrar en el centro médico.</span></li>
+          <li><b>Afiliación online</b><span>Solicitud pública con fotos y seguimiento por código.</span></li>
+          <li><b>Auditoría de historias clínicas</b><span>Portal propio para auditores externos, con todo registrado.</span></li>
+          <li><b>Cobranzas</b><span>Morosidad por grupo familiar, aprobación de comprobantes y avisos masivos.</span></li>
+          <li><b>Panel de gestión</b><span>Dashboard, reportes, importadores de Excel, prestadores y consumos, 4 niveles de rol.</span></li>
+          <li><b>Seguridad</b><span>2FA, RLS en todas las tablas, límites por cuenta, archivos privados con links firmados.</span></li>
+          <li><b>Integraciones</b><span>WhatsApp (Meta Cloud API), email transaccional con Resend y notificaciones push.</span></li>
+          <li><b>Operación</b><span>Tareas programadas, backups nocturnos con GitHub Actions y un resumen diario por mail con alertas.</span></li>
+        </ul>
+        <div class="tags"><span class="tag">Node · Express</span><span class="tag">React · Vite</span><span class="tag">PostgreSQL</span><span class="tag">Supabase</span><span class="tag">Capacitor</span><span class="tag">node-cron</span><span class="tag">Zod</span><span class="tag">Web Push</span></div>
+        <div class="plinks"><span class="lock">Repo privado · datos de salud</span></div>
+      </article>
+      <article class="proj px">
+        <div class="proj-top"><canvas data-icon="calendar"></canvas><div><h3>Turnos médicos</h3><div class="state ok"><i></i>En producción</div></div></div>
+        <p>Sistema de escritorio que reemplaza al software de turnos anterior de la mutual. Multiusuario en tiempo real entre sedes, historia clínica en PDF, sala de espera y parte diario por sede.</p>
+        <div class="tags"><span class="tag">.NET 8</span><span class="tag">WPF · MVVM</span><span class="tag">EF Core</span><span class="tag">SQL Server</span></div>
+        <div class="plinks"><span class="lock">Uso interno</span></div>
+      </article>
+      <article class="proj px">
+        <div class="proj-top"><canvas data-icon="pad"></canvas><div><h3>FULBO</h3><div class="state ok"><i></i>Online · fundador</div></div></div>
+        <p>Juego web de fútbol que fundé y desarrollo desde cero. Carrera como Jugador o Director Técnico, sistema de cartas y economía del juego, copas, Selección y Mundial. Ranking global, push y analíticas de producto para decidir qué construir.</p>
+        <div class="tags"><span class="tag">JavaScript</span><span class="tag">PWA</span><span class="tag">Vercel Functions</span><span class="tag">Redis</span></div>
+        <div class="kpis"><span><b>31K</b> líneas</span><span><b>0</b> dependencias en el cliente</span></div>
+        <div class="plinks"><a href="https://fulbo-gamma.vercel.app" target="_blank" rel="noopener">▶ Jugar</a></div>
+      </article>
+      <article class="proj px">
+        <div class="proj-top"><canvas data-icon="scissors"></canvas><div><h3>Turnera</h3><div class="state warn"><i></i>En desarrollo</div></div></div>
+        <p>SaaS de turnos y fila virtual para barberías y peluquerías. Reserva pública, motor de disponibilidad con tests, bandeja de avisos compartida y panel con avisos en vivo.</p>
+        <div class="tags"><span class="tag">Monorepo</span><span class="tag">Fastify</span><span class="tag">React</span><span class="tag">Supabase Realtime</span><span class="tag">TypeScript</span></div>
+        <div class="kpis"><span><b>3</b> apps</span><span><b>17</b> archivos de tests</span></div>
+        <div class="plinks"><a href="https://turnera-reservas.vercel.app/" target="_blank" rel="noopener">▶ Reservas</a><a href="https://turnera-panel-zeta.vercel.app/" target="_blank" rel="noopener">▶ Panel</a></div>
+      </article>
+      <article class="proj px">
+        <div class="proj-top"><canvas data-icon="net"></canvas><div><h3>Red entre sedes</h3><div class="state ok"><i></i>En producción</div></div></div>
+        <p>Reemplacé una VPN vieja que ya no andaba por una malla Tailscale con ruteo de subred. Hoy conecta servidor, sedes y equipos remotos, y es por donde viaja el sistema de turnos.</p>
+        <div class="tags"><span class="tag">Tailscale</span><span class="tag">IIS</span><span class="tag">Windows Server</span></div>
+        <div class="plinks"><a href="#red">Ver el mapa ↓</a></div>
+      </article>
+      <article class="proj px wide">
+        <div class="proj-top"><canvas data-icon="plus"></canvas><div><h3>Tu proyecto</h3><div class="state warn"><i></i>Esperando jugador 2</div></div></div>
+        <p>¿Tenés un sistema viejo que hay que reemplazar o una idea que necesita salir a producción? Hablemos.</p>
+        <div class="plinks"><a href="#contacto">Contactar ▸</a></div>
+      </article>
+    </div>
+  </section>
+
+  <section id="red">
+    <div class="sec-head">
+      <div><p class="lbl"><span class="world">Mundo 1-2</span></p><h2>La red</h2></div>
+      <span class="lbl">tráfico en vivo · simulado</span>
+    </div>
+    <p class="note">Una versión en píxeles de lo que mantengo todos los días: sedes, servidor y portal en la nube, conectados por una malla privada.</p>
+    <div class="net px">
+      <canvas id="netCanvas" aria-label="Diagrama animado de la red: dos sedes, recepción y portal en la nube conectados al servidor central"></canvas>
+      <div class="netinfo"><span>Nodos <b>5</b></span><span>Protocolo <b>WireGuard</b></span><span>VPN vieja <b>apagada</b></span><span>Uptime <b>●●●●●</b></span></div>
+    </div>
+  </section>
+
+  <section id="ficha">
+    <div class="sec-head">
+      <div><p class="lbl"><span class="world">Mundo 1-3</span></p><h2>Sobre mí</h2></div>
+      <span class="lbl">ficha de personaje</span>
+    </div>
+    <div class="ficha">
+      <div class="card px who">
+        <canvas id="avatar" width="16" height="16" title="Ivan"></canvas>
+        <dl class="kv">
+          <dt>Jugador</dt><dd>Ivan Kovalsky</dd>
+          <dt>Nivel</dt><dd>23</dd>
+          <dt>Clase</dt><dd>Full Stack Engineer</dd>
+          <dt>Rol</dt><dd>AI Software Engineer &amp; IT Manager</dd>
+          <dt>Origen</dt><dd>Ciberseguridad</dd>
+          <dt>Gremio</dt><dd>Mutual de salud · 2026</dd>
+          <dt>Idiomas</dt><dd>Español nativo · Inglés B2</dd>
+        </dl>
+      </div>
+      <div class="card px">
+        <p class="lbl" style="margin:0 0 14px">Atributos</p>
+        <div class="stats" id="stats">
+          <div class="stat" data-v="9"><div class="top"><span>.NET / C#</span><span>9/10</span></div><div class="seg"></div></div>
+          <div class="stat" data-v="8"><div class="top"><span>Node · React</span><span>8/10</span></div><div class="seg"></div></div>
+          <div class="stat" data-v="8"><div class="top"><span>Bases de datos</span><span>8/10</span></div><div class="seg"></div></div>
+          <div class="stat" data-v="9"><div class="top"><span>Redes · Infra</span><span>9/10</span></div><div class="seg"></div></div>
+          <div class="stat" data-v="9"><div class="top"><span>Desarrollo con IA</span><span>9/10</span></div><div class="seg"></div></div>
+          <div class="stat" data-v="8"><div class="top"><span>Seguridad</span><span>8/10</span></div><div class="seg"></div></div>
+        </div>
+        <p class="lbl inv-title">Inventario</p>
+        <div class="inv">
+          <div class="slot"><b>C#</b><span>.NET 8</span></div>
+          <div class="slot"><b>Js</b><span>Node</span></div>
+          <div class="slot"><b>Rx</b><span>React</span></div>
+          <div class="slot"><b>TS</b><span>TypeScript</span></div>
+          <div class="slot"><b>Pg</b><span>PostgreSQL</span></div>
+          <div class="slot"><b>Sq</b><span>SQL Server</span></div>
+          <div class="slot"><b>Ex</b><span>Electron</span></div>
+          <div class="slot"><b>Cp</b><span>Capacitor</span></div>
+          <div class="slot ai"><b>CC</b><span>Claude Code</span></div>
+          <div class="slot ai"><b>Co</b><span>Copilot</span></div>
+          <div class="slot"><b>GA</b><span>Actions</span></div>
+          <div class="slot"><b>Ts</b><span>Tailscale</span></div>
+          <div class="slot"><b>Lx</b><span>Linux</span></div>
+          <div class="slot sec"><b>Bp</b><span>Burp Suite</span></div>
+          <div class="slot sec"><b>Wz</b><span>Wazuh</span></div>
+          <div class="slot sec"><b>Nm</b><span>Nmap</span></div>
+        </div>
+        <p class="lbl inv-title">Logros desbloqueados</p>
+        <ul class="badges">
+          <li><i>★</i><b>ISC2</b><span>Cybersecurity</span></li>
+          <li><i>★</i><b>Cisco</b><span>Junior Cybersecurity Analyst</span></li>
+          <li><i>★</i><b>CoderHouse</b><span>Ciberseguridad</span></li>
+          <li><i>★</i><b>Santander Open Academy</b><span>Python / IoT</span></li>
+          <li><i>◆</i><b>Bachillerato</b><span>en Economía</span></li>
+        </ul>
+        <div class="special">
+          <span class="lbl">Movimiento especial</span>
+          <p>Lidero solo el área de tecnología de la organización: si algo se cae, lo levanto, y si algo falta, lo programo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="misiones">
+    <div class="sec-head">
+      <div><p class="lbl"><span class="world">Mundo 1-4</span></p><h2>Misiones</h2></div>
+      <span class="lbl">registro 2026</span>
+    </div>
+    <ol class="quests">
+      <li class="quest px done"><span class="check">✓</span><div><b>Tomar el área de tecnología</b><span>Software, infraestructura, redes y ciberseguridad de una mutual de salud con varias sedes.</span></div><span class="xp">+500 XP<small>ene 2026</small></span></li>
+      <li class="quest px done"><span class="check">✓</span><div><b>Certificarse en ciberseguridad</b><span>ISC2 y Cisco Junior Cybersecurity Analyst.</span></div><span class="xp">+600 XP<small>completa</small></span></li>
+      <li class="quest px done"><span class="check">✓</span><div><b>Revivir la red</b><span>Fuera la VPN vieja; todas las PCs remotas en una malla estable.</span></div><span class="xp">+800 XP<small>completa</small></span></li>
+      <li class="quest px done"><span class="check">✓</span><div><b>Turnos médicos en producción</b><span>Multiusuario, en tiempo real, usado todos los días.</span></div><span class="xp">+1200 XP<small>completa</small></span></li>
+      <li class="quest px done"><span class="check">✓</span><div><b>MutualGest online</b><span>Portales, chat, laboratorio y panel para una organización de más de 300.000 pacientes.</span></div><span class="xp">+900 XP<small>completa</small></span></li>
+      <li class="quest px done"><span class="check">✓</span><div><b>Fundar FULBO</b><span>Juego web propio, con cartas, economía, ranking global y analíticas.</span></div><span class="xp">+700 XP<small>completa</small></span></li>
+      <li class="quest px doing"><span class="check"></span><div><b>Migrar todo al sistema nuevo</b><span>Plan por fases aprobado, avanzando sede por sede.</span></div><span class="xp">??? XP<small>en curso</small></span></li>
+      <li class="quest px doing"><span class="check"></span><div><b>Lanzar Turnera</b><span>Reservas y panel ya online; primeros locales en la mira.</span></div><span class="xp">??? XP<small>en curso</small></span></li>
+    </ol>
+  </section>
+
+  <section id="juego">
+    <div class="sec-head">
+      <div><p class="lbl"><span class="world">Mundo 1-5</span></p><h2>Cazá los bugs</h2></div>
+      <span class="lbl">récord <b id="best" style="color:var(--warn);font-weight:400">0</b></span>
+    </div>
+    <div class="game px">
+      <canvas id="game" aria-label="Minijuego: tocá los bugs antes de que lleguen al servidor"></canvas>
+      <div class="overlay" id="gOver">
+        <h3 id="gTitle">Cazá los bugs</h3>
+        <p id="gText">Los bugs van directo al servidor. Tocalos antes de que lleguen. 30 segundos, 3 vidas.</p>
+        <p class="final" id="gFinal" hidden></p>
+        <button class="btn primary" id="gStart" type="button">▶ Empezar</button>
+      </div>
+      <div class="ghud"><span>Puntos <b id="gScore">0</b></span><span>Vidas <b class="hearts" id="gLives">♥♥♥</b></span><span>Tiempo <b id="gTime">30</b>s</span></div>
+    </div>
+  </section>
+
+  <section id="contacto">
+    <div class="sec-head">
+      <div><p class="lbl"><span class="world">Mundo 1-6</span></p><h2>Contacto</h2></div>
+      <span class="lbl">insert coin</span>
+    </div>
+    <div class="contact">
+      <div class="links">
+        <a class="link px" href="https://github.com/IvanKovalsky" target="_blank" rel="noopener"><span>GitHub</span><span>@IvanKovalsky ↗</span></a>
+        <a class="link px" href="https://ar.linkedin.com/in/ivankovalsky2" target="_blank" rel="noopener"><span>LinkedIn</span><span>/in/ivankovalsky2 ↗</span></a>
+        <div class="link px"><span>Email</span><span id="mail">kovalsky.ivan.18@gmail.com</span></div>
+        <div class="row"><button class="btn" id="copyMail" type="button">Copiar email</button></div>
+      </div>
+      <div class="crt px" aria-label="Terminal interactiva">
+        <div class="crt-bar"><span>guest@ivan.dev</span><span>tty1</span></div>
+        <div class="out" id="out" aria-live="polite"></div>
+        <form class="cmd" id="tform" autocomplete="off">
+          <label for="cmd">guest:~$</label>
+          <input id="cmd" name="cmd" placeholder="help" spellcheck="false">
+        </form>
+        <div class="chips">
+          <button type="button" data-c="help">help</button>
+          <button type="button" data-c="whoami">whoami</button>
+          <button type="button" data-c="stack">stack</button>
+          <button type="button" data-c="certs">certs</button>
+          <button type="button" data-c="tailscale status">tailscale</button>
+          <button type="button" data-c="clear">clear</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Construido bloque por bloque · © 2026 Ivan Kovalsky</span>
+    <span id="secrets">Secretos <b>0</b>/5</span>
+  </footer>
+</main>
+<canvas id="rain" hidden></canvas>
+
+<script>
+(function(){
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C = {bg:css('--bg'),ink:css('--ink'),muted:css('--muted'),dim:css('--dim'),line:css('--line'),accent:css('--accent'),cyan:css('--cyan'),
+  ok:css('--ok'),warn:css('--warn'),skin:css('--skin'),hair:css('--hair'),surface2:css('--surface-2'),shadow:css('--shadow')};
+const DPR = Math.min(window.devicePixelRatio||1, 2);
+
+/* ---------- secretos ---------- */
+const found = new Set();
+function secret(key){
+  if(found.has(key)) return false;
+  found.add(key);
+  document.querySelector('#secrets b').textContent = found.size;
+  jingle([523,659,784,1047]);
+  if(found.size===5){say('¡100% completado! 🏆', 3000);toast('100% · todos los secretos');}
+  return true;
+}
+
+/* ---------- bloques ---------- */
+function shade(hex, amt){
+  const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;
+  r=Math.max(0,Math.min(255,r+amt));g=Math.max(0,Math.min(255,g+amt));b=Math.max(0,Math.min(255,b+amt));
+  return 'rgb('+r+','+g+','+b+')';
+}
+function block(ctx,x,y,s,color,v){
+  ctx.fillStyle=shade(color,v||0);ctx.fillRect(x,y,s,s);
+  const e=Math.max(1,Math.round(s/5));
+  ctx.fillStyle='rgba(255,255,255,.22)';ctx.fillRect(x,y,s,e);ctx.fillRect(x,y,e,s);
+  ctx.fillStyle='rgba(0,0,0,.28)';ctx.fillRect(x,y+s-e,s,e);ctx.fillRect(x+s-e,y,e,s);
+}
+
+/* ---------- HERO: el nombre se construye ---------- */
+const FONT={
+I:["11111","00100","00100","00100","00100","00100","11111"],
+V:["10001","10001","10001","10001","10001","01010","00100"],
+A:["01110","10001","10001","11111","10001","10001","10001"],
+N:["10001","11001","10101","10011","10001","10001","10001"],
+K:["10001","10010","10100","11000","10100","10010","10001"],
+O:["01110","10001","10001","10001","10001","10001","01110"],
+L:["10000","10000","10000","10000","10000","10000","11111"],
+S:["01111","10000","10000","01110","00001","00001","11110"],
+Y:["10001","10001","01010","00100","00100","00100","00100"]};
+const SPRITE=[[".hhhhh.","hhHhhhh","hsesesh",".sgggs.","ooooooo",".ooooo.",".ooooo.",".d...d.",".w...w."],
+              [".hhhhh.","hhHhhhh","hsesesh",".sgggs.","ooooooo",".ooooo.",".ooooo.","..d.d..","..w.w.."]];
+const SP_BLINK="hsssssh";
+const SPC={h:C.hair,H:'#5a3a26',s:C.skin,e:'#1b1530',g:'#c9a184',o:'#3b3a4a',d:'#4a6fa5',w:C.ink};
+
+const hc=document.getElementById('heroCanvas'), hctx=hc.getContext('2d');
+const stage=document.getElementById('stage'), bubble=document.getElementById('bubble'), skipBtn=document.getElementById('skip');
+const TOP=5, COLS=47;
+let cell, blocks=[], t0=0, TOTAL=0, STAG=0, done=false, sprite={x:0,y:0,jump:0,frame:0}, blinkUntil=0;
+
+function buildBlocks(){
+  blocks=[];
+  [["IVAN",TOP],["KOVALSKY",TOP+9]].forEach(([word,y0])=>{
+    [...word].forEach((ch,i)=>{
+      FONT[ch].forEach((row,r)=>[...row].forEach((v,c)=>{
+        if(v==='1') blocks.push({x:i*6+c,y:y0+r,color:C.ink,v:Math.round(Math.random()*24-14)});
+      }));
+    });
+  });
+  blocks.push({x:24,y:TOP+6,color:C.accent,v:0});
+  blocks.push({x:47,y:TOP+15,color:C.accent,v:0});
+  blocks.sort((a,b)=>a.x-b.x||b.y-a.y);
+  blocks.forEach((b,i)=>b.i=i);
+  STAG=RM?0:Math.max(7,2300/blocks.length);
+  TOTAL=blocks.length*STAG+260;
+}
+function layoutHero(){
+  const w=stage.clientWidth;
+  cell=Math.max(5,Math.min(18,Math.floor(w/(COLS+1))));
+  const W=(COLS+1)*cell, H=(TOP+7+2+7)*cell;
+  hc.style.width=W+'px';hc.style.height=H+'px';
+  hc.width=W*DPR;hc.height=H*DPR;
+  hctx.setTransform(DPR,0,0,DPR,0,0);hctx.imageSmoothingEnabled=false;
+}
+function drawSprite(ctx,x,y,p,frame,blink){
+  const rows=SPRITE[frame];
+  rows.forEach((row,r)=>{
+    const rr=(r===2&&blink)?SP_BLINK:row;
+    [...rr].forEach((ch,c)=>{ if(ch!=='.'){ctx.fillStyle=SPC[ch];ctx.fillRect(Math.round(x+c*p),Math.round(y+r*p),p,p);} });
+  });
+}
+function heroFrame(now){
+  const t=done?TOTAL:now-t0;
+  hctx.clearRect(0,0,hc.width,hc.height);
+  const p=Math.max(2,Math.floor(cell/2)), sh=9*p, sw=7*p;
+  let last=null;
+  for(const b of blocks){
+    const st=b.i*STAG;
+    if(t<st) break;
+    const k=Math.min(1,(t-st)/240);
+    const e=1-Math.pow(1-k,3);
+    const fromY=(TOP-1)*cell;
+    const y=fromY+(b.y*cell-fromY)*e;
+    block(hctx,b.x*cell,y,cell,b.color,b.v);
+    last=b;
+  }
+  // personaje
+  let tx;
+  if(t>=TOTAL){tx=27*cell;}
+  else{tx=(last?last.x:0)*cell-sw/2+cell/2;}
+  sprite.x+= (tx-sprite.x)*(done?.12:.35);
+  const walking=Math.abs(tx-sprite.x)>1;
+  if(walking||!done) sprite.frame=(Math.floor(now/120)%2);
+  else sprite.frame=0;
+  sprite.jump*=.86;
+  const hop=(!done&&t<TOTAL)?Math.abs(Math.sin(now/90))*p*1.5:0;
+  sprite.y=TOP*cell-sh-hop-sprite.jump;
+  if(now>blinkUntil+3200){blinkUntil=now+140;}
+  drawSprite(hctx,sprite.x,sprite.y,p,sprite.frame,now<blinkUntil);
+  // bloque en la mano mientras construye
+  if(!done&&t<TOTAL){block(hctx,sprite.x+sw/2-cell/2,sprite.y-cell-2,cell,C.ink,0);}
+  if(t>=TOTAL&&!done){finish();}
+  bubble.style.left=(sprite.x+sw+12)+'px';
+  bubble.style.top=(sprite.y-4)+'px';
+  requestAnimationFrame(heroFrame);
+}
+let bubbleTimer;
+function say(text,ms){
+  bubble.textContent=text;bubble.classList.add('on');
+  clearTimeout(bubbleTimer);
+  if(ms) bubbleTimer=setTimeout(()=>{bubble.textContent='deploy ok ✓'},ms);
+}
+function finish(){done=true;skipBtn.hidden=true;say('deploy ok ✓');}
+function skip(){if(!done){t0=performance.now()-TOTAL;}}
+skipBtn.addEventListener('click',skip);
+hc.addEventListener('click',()=>{sprite.jump=cell*2.2;beep(880,.07);if(done){const q=['¿un mate?','uptime 100%','git push --force? no.','ping 1ms','compilando…'];say(q[Math.floor(Math.random()*q.length)],1800);}});
+
+buildBlocks();layoutHero();
+sprite.x=-cell*4;
+t0=performance.now();
+if(RM){done=true;skipBtn.hidden=true;bubble.classList.add('on');sprite.x=27*cell;}
+requestAnimationFrame(heroFrame);
+addEventListener('resize',()=>{layoutHero();if(done)sprite.x=27*cell;});
+
+/* ---------- íconos de proyecto ---------- */
+const ICONS={
+calendar:["............","..a......a..",".aaaaaaaaaa.",".aaaaaaaaaa.",".wwwwwwwwww.",".wddwddwddw.",".wddwddwddw.",".wwwwwwwwww.",".wddwccwddw.",".wddwccwddw.",".wwwwwwwwww.","............"],
+card:["............","............","cccccccccccc","cwwwwwwwwwwc","cwaawddddwwc","cwaawwwwwwwc","cwaawdddwwwc","cwwwwwwwwwwc","cwddddddddwc","cwwwwwwwwwwc","cccccccccccc","............"],
+net:["............",".aa......aa.",".aa......aa.","...d....d...","....d..d....",".....cc.....",".....cc.....","....d..d....","...d....d...",".aa......aa.",".aa......aa.","............"],
+chat:["............",".cccccccccc.","cccccccccccc","cccccccccccc","cwwccwwccwwc","cwwccwwccwwc","cccccccccccc",".cccccccccc.",".ccc........",".cc.........",".c..........","............"],
+scissors:["w.........w.",".w.......w..","..w.....w...","...w...w....","....w.w.....",".....d......","....d.d.....","..aa...aa...",".a..a.a..a..",".a..a.a..a..","..aa...aa...","............"],
+ball:["....wwww....","..wwwddwww..",".wwwddddwww.",".wwwwddwwww.","wddwwwwwwddw","wdddwwwwdddw","wddwwwwwwddw",".wwwwddwwww.",".wwwddddwww.","..wwwddwww..","....wwww....","............"],
+pad:["............","............","............","..dddddddd..",".dddddddddd.","ddwdddddddad","dwwwddddcdad","ddwddddddcdd","dddd....dddd",".dd......dd.","............","............"],
+factory:["............","..........aa","..........aa",".d...d....aa",".dd..dd...aa",".ddd.ddd.ddd","dddddddddddd","dwwdwwdwwddd","dwwdwwdwwddd","dddddddddddd","dddddcc.dddd","dddddcc.dddd"],
+plus:["............","....aaaa....","....aaaa....","....aaaa....","aaaaaaaaaaaa","aaaaaaaaaaaa","aaaaaaaaaaaa","aaaaaaaaaaaa","....aaaa....","....aaaa....","....aaaa....","............"]};
+const ICP={a:C.accent,w:C.ink,c:C.cyan,d:C.dim};
+function drawIcon(cv,name,delay){
+  const map=ICONS[name],u=5,s=12*u;
+  cv.width=s*DPR;cv.height=s*DPR;
+  const ctx=cv.getContext('2d');ctx.setTransform(DPR,0,0,DPR,0,0);
+  const px=[];map.forEach((row,r)=>[...row].forEach((ch,c)=>{if(ch!=='.')px.push([c,r,ICP[ch]])}));
+  if(RM){px.forEach(([c,r,col])=>{ctx.fillStyle=col;ctx.fillRect(c*u,r*u,u,u)});return;}
+  px.sort(()=>Math.random()-.5);
+  ctx.clearRect(0,0,s,s);
+  const start=performance.now()+(delay||0),dur=520;
+  cv._run=(cv._run||0)+1;const run=cv._run;
+  (function step(now){
+    if(run!==cv._run) return;
+    const k=Math.max(0,Math.min(1,(now-start)/dur));
+    const n=Math.floor(px.length*k);
+    ctx.clearRect(0,0,s,s);
+    for(let i=0;i<n;i++){const [c,r,col]=px[i];ctx.fillStyle=col;ctx.fillRect(c*u,r*u,u,u);}
+    if(k<1) requestAnimationFrame(step);
+  })(performance.now());
+}
+document.querySelectorAll('canvas[data-icon]').forEach((cv,i)=>{
+  drawIcon(cv,cv.dataset.icon,i*110);
+  cv.closest('.proj').addEventListener('mouseenter',()=>drawIcon(cv,cv.dataset.icon,0));
+});
+
+/* ---------- mapa de red ---------- */
+const nc=document.getElementById('netCanvas'),nctx=nc.getContext('2d');
+const BM={
+mon:["cccccccccc","cwwwwwwwwc","cwddddddwc","cwddddddwc","cwwwwwwwwc","cccccccccc","....cc....","..cccccc.."],
+srv:["dddddddd","dwwwwwwd","dgddddyd","dwwwwwwd","dgddddyd","dwwwwwwd","dgddddyd","dwwwwwwd","dddddddd"],
+cloud:["....wwww....","..wwwwwwww..",".wwwwwwwwwww","wwwwwwwwwwww","wwwwwwwwwwww",".wwwwwwwwww."]};
+const NODES=[
+  {id:'srv',x:.5,y:.5,bm:'srv',label:'SERVIDOR'},
+  {id:'a',x:.13,y:.22,bm:'mon',label:'SEDE A'},
+  {id:'b',x:.13,y:.8,bm:'mon',label:'SEDE B'},
+  {id:'r',x:.87,y:.22,bm:'mon',label:'RECEPCIÓN'},
+  {id:'p',x:.87,y:.8,bm:'cloud',label:'PORTAL'}];
+let packets=[];let netW=0,netH=300,netU=4,netVisible=true;
+function netLayout(){
+  netW=nc.clientWidth;netH=nc.clientHeight;
+  nc.width=netW*DPR;nc.height=netH*DPR;nctx.setTransform(DPR,0,0,DPR,0,0);
+  netU=netW<480?3:4;
+}
+function pathFor(n){
+  const g=netU*2;
+  const sx=Math.round(n.x*netW/g)*g,sy=Math.round(n.y*netH/g)*g;
+  const cx=Math.round(.5*netW/g)*g,cy=Math.round(.5*netH/g)*g;
+  return [[sx,sy],[sx,cy],[cx,cy]];
+}
+function pointOn(path,k){
+  const segs=[];let total=0;
+  for(let i=0;i<path.length-1;i++){const l=Math.abs(path[i+1][0]-path[i][0])+Math.abs(path[i+1][1]-path[i][1]);segs.push(l);total+=l;}
+  let d=k*total;
+  for(let i=0;i<segs.length;i++){
+    if(d<=segs[i]){const f=segs[i]?d/segs[i]:0;return [path[i][0]+(path[i+1][0]-path[i][0])*f,path[i][1]+(path[i+1][1]-path[i][1])*f];}
+    d-=segs[i];
+  }
+  return path[path.length-1];
+}
+function drawBM(ctx,map,cx,cy,u,now){
+  const h=map.length,w=map[0].length,x0=Math.round(cx-w*u/2),y0=Math.round(cy-h*u/2);
+  map.forEach((row,r)=>[...row].forEach((ch,c)=>{
+    if(ch==='.')return;
+    let col={c:C.cyan,w:C.ink,d:C.line,g:C.ok,y:C.warn}[ch];
+    if(ch==='d'&&map===BM.mon) col=C.surface2;
+    if((ch==='g'||ch==='y')&&Math.floor(now/(ch==='g'?300:520)+r)%2) col=C.line;
+    ctx.fillStyle=col;ctx.fillRect(x0+c*u,y0+r*u,u,u);
+  }));
+  return {x0,y0,w:w*u,h:h*u};
+}
+function spawn(){
+  const n=NODES[1+Math.floor(Math.random()*4)];
+  packets.push({n,k:0,dir:Math.random()<.5?1:-1,sp:.006+Math.random()*.008,col:Math.random()<.5?C.cyan:C.accent});
+}
+for(let i=0;i<8;i++){spawn();packets[i].k=Math.random();}
+function netFrame(now){
+  if(netVisible){
+    nctx.clearRect(0,0,netW,netH);
+    // enlaces punteados
+    NODES.slice(1).forEach(n=>{
+      const path=pathFor(n);
+      for(let i=0;i<path.length-1;i++){
+        const [x1,y1]=path[i],[x2,y2]=path[i+1];
+        const len=Math.abs(x2-x1)+Math.abs(y2-y1),step=netU*3;
+        for(let d=0;d<=len;d+=step){
+          const f=len?d/len:0;nctx.fillStyle=C.line;
+          nctx.fillRect(Math.round(x1+(x2-x1)*f-netU/2),Math.round(y1+(y2-y1)*f-netU/2),netU,netU);
+        }
+      }
+    });
+    // paquetes
+    packets.forEach(p=>{
+      if(!RM) p.k+=p.sp;
+      const kk=p.dir>0?p.k:1-p.k;
+      const [x,y]=pointOn(pathFor(p.n),Math.min(1,kk));
+      nctx.fillStyle=p.col;nctx.fillRect(Math.round(x-netU),Math.round(y-netU),netU*2,netU*2);
+    });
+    packets=packets.filter(p=>p.k<1);
+    while(packets.length<8) spawn();
+    // nodos
+    nctx.font=(netW<480?9:11)+'px Silkscreen, monospace';nctx.textAlign='center';
+    NODES.forEach(n=>{
+      const u=n.bm==='srv'?netU+1:netU;
+      const g=netU*2,cx=Math.round(n.x*netW/g)*g,cy=Math.round(n.y*netH/g)*g;
+      const map=BM[n.bm],bw=map[0].length*u+u*4,bh=map.length*u+u*4;
+      nctx.fillStyle=C.bg;nctx.fillRect(cx-bw/2,cy-bh/2,bw,bh);
+      const box=drawBM(nctx,map,cx,cy,u,now);
+      nctx.fillStyle=C.muted;nctx.fillText(n.label,cx,box.y0+box.h+16);
+    });
+  }
+  if(!RM) requestAnimationFrame(netFrame);
+}
+netLayout();
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{if(RM)netFrame(performance.now())});
+requestAnimationFrame(netFrame);
+addEventListener('resize',()=>{netLayout();if(RM)netFrame(performance.now())});
+if('IntersectionObserver' in window){new IntersectionObserver(es=>{netVisible=es[0].isIntersecting}).observe(nc);}
+
+/* ---------- avatar ---------- */
+const AV=[
+"....h.hh.h.h....",
+"..hhhhhhhhhhh...",
+".hhhHhhhHhhhhh..",
+".hhhhhhhhhhhhhh.",
+".hhhsshhhhsshhh.",
+".hhsssssssssshh.",
+".kssbbssssbbssk.",
+".kssssssksssssk.",
+".rsssssmmsssss..",
+"...sggggggggs...",
+"......sxss......",
+"...tttTTTTttt...",
+"..tttttTTttttt..",
+".tttttttttttttt.",
+".tttLttttttttLt.",
+".tttLttttttttLt."];
+const AVC={h:C.hair,H:'#5a3a26',s:C.skin,k:'#d9a888',b:'#1b1530',m:'#b7705a',g:'#c9a184',x:'#d9a888',r:'#c9cbd6',t:'#3b3a4a',T:'#26252f',L:'#2f2e3b'};
+const avc=document.getElementById('avatar'),actx=avc.getContext('2d');
+function drawAvatar(blink,jump){
+  actx.clearRect(0,0,16,16);
+  AV.forEach((row,r)=>[...row].forEach((ch,c)=>{
+    if(ch==='.')return;
+    let col=AVC[ch]; if(ch==='b'&&blink) col=C.skin;
+    actx.fillStyle=col;actx.fillRect(c,r-(jump?1:0),1,1);
+  }));
+}
+drawAvatar(false);
+if(!RM) setInterval(()=>{drawAvatar(true);setTimeout(()=>drawAvatar(false),150)},3400);
+let pokes=0;
+avc.addEventListener('click',()=>{
+  pokes++;drawAvatar(false,true);setTimeout(()=>drawAvatar(false),160);
+  if(pokes===5&&secret('avatar')){document.getElementById('top').scrollIntoView({behavior:RM?'auto':'smooth'});say('¡eso hace cosquillas! (1 secreto)',2600);}
+});
+
+/* ---------- barras de atributos ---------- */
+document.querySelectorAll('.stat').forEach((s,si)=>{
+  const v=+s.dataset.v,seg=s.querySelector('.seg');
+  for(let i=0;i<10;i++){const b=document.createElement('i');if(i<v)b.className='on';seg.appendChild(b);}
+  if(!RM){
+    const bars=[...seg.children].slice(0,v);bars.forEach(b=>b.classList.remove('on'));
+    bars.forEach((b,i)=>setTimeout(()=>b.classList.add('on'),600+si*120+i*70));
+  }
+});
+
+/* ---------- lluvia de bloques (konami) ---------- */
+const rain=document.getElementById('rain'),rctx=rain.getContext('2d');
+function blockRain(){
+  rain.hidden=false;rain.width=innerWidth;rain.height=innerHeight;
+  const cols=[C.accent,C.cyan,C.ok,C.warn,C.ink];
+  const drops=Array.from({length:90},()=>({x:Math.random()*innerWidth,y:-Math.random()*innerHeight,s:8+Math.floor(Math.random()*3)*4,v:4+Math.random()*6,c:cols[Math.floor(Math.random()*cols.length)]}));
+  const end=performance.now()+2600;
+  (function f(now){
+    rctx.clearRect(0,0,rain.width,rain.height);
+    drops.forEach(d=>{d.y+=d.v;block(rctx,Math.round(d.x),Math.round(d.y),d.s,d.c,0)});
+    if(now<end) requestAnimationFrame(f); else {rain.hidden=true;}
+  })(performance.now());
+}
+const KONAMI=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];let kpos=0;
+addEventListener('keydown',e=>{
+  if(e.key==='Escape') skip();
+  const k=e.key.length===1?e.key.toLowerCase():e.key;
+  kpos=(k===KONAMI[kpos])?kpos+1:(k===KONAMI[0]?1:0);
+  if(kpos===KONAMI.length){kpos=0;if(!RM)blockRain();if(secret('konami'))print('<span class="g">★ código konami. secreto desbloqueado.</span>');}
+});
+
+/* ---------- terminal ---------- */
+const out=document.getElementById('out'),input=document.getElementById('cmd');
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function print(h){out.insertAdjacentHTML('beforeend',h+'\n');out.scrollTop=out.scrollHeight;}
+const cmds={
+  help:()=>'comandos: <span class="p">whoami</span> <span class="p">stack</span> <span class="p">certs</span> <span class="p">proyectos</span> <span class="p">contacto</span> <span class="p">tailscale status</span> <span class="p">clear</span>\n<span class="d">hay 5 secretos escondidos en la página.</span>',
+  whoami:()=>'ivan kovalsky\nclase: full stack engineer · nivel 23\nrol: ai software engineer & it manager\nbase: buenos aires · es nativo / en b2',
+  stack:()=>'backend   c# .net 8 · node · express · fastify · prisma\nfrontend  wpf · react · vite · tailwind · capacitor\ndatos     sql server · postgres · supabase\ninfra     tailscale · iis · windows server · linux\nia        claude code · copilot · chatgpt · gemini\nsecurity  burp · wazuh · nmap · wireshark',
+  certs:()=>'★ isc2 cybersecurity\n★ cisco junior cybersecurity analyst\n★ coderhouse ciberseguridad\n★ santander open academy python / iot',
+  fulbo:()=>'abrí fulbo-gamma.vercel.app y armá tu carrera ⚽',
+  proyectos:()=>{setTimeout(()=>document.getElementById('proyectos').scrollIntoView({behavior:RM?'auto':'smooth'}),350);return 'cargando mundo 1-1… mutualgest, turnos médicos, fulbo y turnera.';},
+  contacto:()=>'github    github.com/IvanKovalsky\nlinkedin  ar.linkedin.com/in/ivankovalsky2\nemail     kovalsky.ivan.18@gmail.com',
+  tailscale:()=>'<span class="c">● servidor    online   relay: directo\n● sede-a      online   1ms\n● sede-b      online   2ms\n● recepcion   online   1ms</span>',
+  ping:()=>'64 bytes de ivan.dev: time=1ms\n<span class="c">online · abierto a proyectos</span>',
+  sudo:()=>secret('sudo')?'<span class="g">★ secreto desbloqueado.</span>\nivan no está en sudoers. el incidente será reportado. 😉':'ya lo intentaste. sigue sin funcionar.',
+  mate:()=>secret('mate')?'<span class="g">★ secreto desbloqueado.</span>\ncebando… 🧉 el código sale mejor con mate.':'🧉 otro mate, por favor.',
+  clear:()=>{out.innerHTML='';return null;}
+};
+function run(raw){
+  const c=raw.trim().toLowerCase();if(!c)return;
+  print('<span class="p">guest:~$</span> '+esc(c));
+  const f=cmds[c.split(/\s+/)[0]];
+  const r=f?f():'comando no encontrado: '+esc(c)+'. probá <span class="p">help</span>';
+  if(r) print(r);
+}
+print('<span class="d">IVAN-OS v1.0 · memoria ok · red ok\nescribí un comando o tocá los botones.</span>');
+document.getElementById('tform').addEventListener('submit',e=>{e.preventDefault();run(input.value);input.value='';});
+document.querySelectorAll('.chips button').forEach(b=>b.addEventListener('click',()=>run(b.dataset.c)));
+document.getElementById('copyMail').addEventListener('click',e=>{
+  const el=document.getElementById('mail'),btn=e.currentTarget;
+  navigator.clipboard.writeText(el.textContent).then(()=>{btn.textContent='¡Copiado!'},()=>{
+    const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Seleccionado';
+  });
+});
+/* ---------- sonido 8-bit ---------- */
+let soundOn=false,ac=null;
+function beep(f,d,type,vol){
+  if(!soundOn) return;
+  try{
+    ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;
+    o.type=type||'square';o.frequency.setValueAtTime(f,t);
+    g.gain.setValueAtTime(vol||.035,t);g.gain.exponentialRampToValueAtTime(.0001,t+(d||.06));
+    o.connect(g).connect(ac.destination);o.start(t);o.stop(t+(d||.06)+.02);
+  }catch(e){}
+}
+function jingle(notes){notes.forEach((f,i)=>setTimeout(()=>beep(f,.09),i*90));}
+const sndBtn=document.getElementById('snd');
+sndBtn.addEventListener('click',()=>{
+  soundOn=!soundOn;sndBtn.setAttribute('aria-pressed',soundOn);sndBtn.textContent=soundOn?'♪ ON':'♪ OFF';
+  if(soundOn) jingle([392,523,659]);
+});
+document.addEventListener('click',e=>{if(e.target.closest('.btn,.chips button,nav a'))beep(660,.04);});
+
+/* ---------- toast, XP y niveles ---------- */
+const toastEl=document.getElementById('toast');let toastT;
+function toast(text){toastEl.textContent=text;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,1800);}
+const xp=document.getElementById('xp'),lvl=document.getElementById('lvl');
+function onScroll(){
+  const max=document.documentElement.scrollHeight-innerHeight;
+  const pct=max>0?Math.min(1,scrollY/max):0;
+  xp.style.width=(Math.round(pct*25)*4)+'%';
+}
+addEventListener('scroll',onScroll,{passive:true});onScroll();
+const WORLDS=['proyectos','red','ficha','misiones','juego','contacto'];let reached=0;
+if('IntersectionObserver' in window){
+  const io=new IntersectionObserver(es=>{es.forEach(en=>{
+    if(!en.isIntersecting) return;
+    const i=WORLDS.indexOf(en.target.id)+1;
+    if(i>reached){reached=i;lvl.textContent='LVL '+(i+1);toast('LEVEL UP · Mundo 1-'+i);jingle([523,784]);}
+  })},{threshold:.3});
+  WORLDS.forEach(id=>io.observe(document.getElementById(id)));
+}
+
+/* ---------- cielo: barrio pixelado con el tren ---------- */
+const sky=document.getElementById('sky'),sctx=sky.getContext('2d');
+let SW=0,SH=112,SU=4,buildings=[],stars=[],skyVis=true,trainX=-999,nextTrain=0;
+function rnd(seed){return()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646;}}
+function skyLayout(){
+  SW=sky.clientWidth;SH=sky.clientHeight;sky.width=SW*DPR;sky.height=SH*DPR;sctx.setTransform(DPR,0,0,DPR,0,0);
+  const r=rnd(1977);buildings=[];let x=0;const cols=Math.ceil(SW/SU);
+  while(x<cols){
+    const w=4+Math.floor(r()*8),h=5+Math.floor(r()*13),win=[];
+    for(let wy=2;wy<h-1;wy+=3)for(let wx=1;wx<w-1;wx+=2)win.push({x:wx,y:wy,on:r()<.4});
+    buildings.push({x,w,h,win,roof:r()<.35,tone:r()<.5});x+=w+(r()<.3?1:0);
+  }
+  stars=Array.from({length:Math.floor(SW/22)},()=>({x:Math.floor(r()*cols),y:Math.floor(r()*8),t:r()*6}));
+}
+const TRAIN=["..cccccccccccc..cccccccccccccc..cccccccccccccc","..cwwcwwcwwccc..cwwcwwcwwcwwcc..cwwcwwcwwcwwcc","..cccccccccccc..cccccccccccccc..cccccccccccccc","...d...d..d.......d..d...d..d.......d..d...d.."];
+function skyFrame(now){
+  if(skyVis){
+    sctx.clearRect(0,0,SW,SH);
+    const base=SH-4*SU;
+    stars.forEach(s=>{if(Math.sin(now/700+s.t)>-.3){sctx.fillStyle=C.dim;sctx.fillRect(s.x*SU,s.y*SU,SU/2,SU/2);}});
+    // luna
+    sctx.fillStyle=C.ink;sctx.fillRect(SW-10*SU,1*SU,3*SU,3*SU);sctx.fillRect(SW-11*SU,2*SU,1*SU,1*SU);
+    sctx.fillStyle=C.bg;sctx.fillRect(SW-9*SU,1*SU,SU,SU);
+    if(!RM&&Math.random()<.04){const b=buildings[Math.floor(Math.random()*buildings.length)];if(b.win.length){const w=b.win[Math.floor(Math.random()*b.win.length)];w.on=!w.on;}}
+    buildings.forEach(b=>{
+      const bx=b.x*SU,by=base-b.h*SU;
+      sctx.fillStyle=b.tone?C.surface2:C.line;sctx.fillRect(bx,by,b.w*SU,b.h*SU);
+      if(b.roof){sctx.fillRect(bx+SU,by-SU,(b.w-2)*SU,SU);}
+      b.win.forEach(w=>{sctx.fillStyle=w.on?C.warn:C.shadow;sctx.fillRect(bx+w.x*SU,by+w.y*SU,SU,SU);});
+    });
+    // vías
+    sctx.fillStyle=C.line;sctx.fillRect(0,base,SW,SU);
+    sctx.fillStyle=C.dim;for(let x=0;x<SW;x+=SU*3)sctx.fillRect(x,base+SU*2,SU*2,SU);
+    sctx.fillStyle=C.line;sctx.fillRect(0,base+SU*3,SW,SU/2);
+    // tren
+    if(!RM){
+      if(trainX<-TRAIN[0].length*SU&&now>nextTrain){trainX=SW;nextTrain=now+9000+Math.random()*5000;}
+      if(trainX>=-TRAIN[0].length*SU){trainX-=2.2;}
+      const ty=base-3*SU;
+      TRAIN.forEach((row,r)=>[...row].forEach((ch,c)=>{
+        if(ch==='.')return;sctx.fillStyle={c:C.cyan,w:C.warn,d:C.ink}[ch];
+        sctx.fillRect(Math.round(trainX)+c*SU,ty+r*SU,SU,SU);
+      }));
+    }
+  }
+  if(!RM) requestAnimationFrame(skyFrame);
+}
+skyLayout();requestAnimationFrame(skyFrame);
+addEventListener('resize',()=>{skyLayout();if(RM)skyFrame(0);});
+if('IntersectionObserver' in window){new IntersectionObserver(es=>{skyVis=es[0].isIntersecting}).observe(sky);}
+
+/* ---------- minijuego: cazá los bugs ---------- */
+const gc=document.getElementById('game'),g=gc.getContext('2d');
+const gOver=document.getElementById('gOver'),gStart=document.getElementById('gStart'),gTitle=document.getElementById('gTitle'),gText=document.getElementById('gText'),gFinal=document.getElementById('gFinal');
+const gScore=document.getElementById('gScore'),gLives=document.getElementById('gLives'),gTime=document.getElementById('gTime'),bestEl=document.getElementById('best');
+const BUG=[["d......d",".d.bb.d.","..bbbb..","dbebbebd",".bbbbbb.","d.bbbb.d","..b..b.."],["d......d",".d.bb.d.","..bbbb..","dbebbebd",".bbbbbb.",".dbbbbd.",".b....b."]];
+const BUGC={b:css('--bug'),d:C.dim,e:C.ink};
+let GW=0,GH=320,GU=4,bugs=[],parts=[],score=0,lives=3,timeLeft=30,playing=false,lastT=0,spawnT=0,flash=0,best=0;
+try{best=+localStorage.getItem('ik-best')||0;}catch(e){}
+bestEl.textContent=best;
+function gLayout(){GW=gc.clientWidth;GH=gc.clientHeight;gc.width=GW*DPR;gc.height=GH*DPR;g.setTransform(DPR,0,0,DPR,0,0);GU=GW<480?3:4;}
+function drawMap(map,pal,x,y,u){map.forEach((row,r)=>[...row].forEach((ch,c)=>{if(ch==='.')return;g.fillStyle=pal[ch];g.fillRect(Math.round(x+c*u),Math.round(y+r*u),u,u);}));}
+const SRV_X=()=>18;
+function gDraw(now){
+  g.clearRect(0,0,GW,GH);
+  // piso de grilla
+  g.fillStyle=C.surface2;for(let x=0;x<GW;x+=GU*8)for(let y=0;y<GH;y+=GU*8)g.fillRect(x,y,GU/2,GU/2);
+  // servidor
+  const su=GU+2,sx=SRV_X(),sy=GH/2-9*su/2;
+  if(flash>0){g.fillStyle='rgba(255,93,115,'+(flash*.35)+')';g.fillRect(0,0,GW,GH);}
+  drawMap(BM.srv,{d:C.line,w:C.ink,g:(Math.floor(now/300)%2?C.ok:C.line),y:(Math.floor(now/500)%2?C.warn:C.line)},sx,sy,su);
+  g.font='10px Silkscreen, monospace';g.fillStyle=C.muted;g.textAlign='center';g.fillText('PROD',sx+4*su,sy+9*su+14);
+  bugs.forEach(b=>drawMap(BUG[Math.floor(now/110+b.ph)%2],BUGC,b.x-4*GU,b.y-3.5*GU,GU));
+  parts.forEach(p=>{g.fillStyle=p.c;g.fillRect(Math.round(p.x),Math.round(p.y),GU,GU);});
+}
+function gSpawn(){
+  const sp=(45+Math.random()*40)*(1+(30-timeLeft)/22);
+  bugs.push({x:GW+20,y:30+Math.random()*(GH-70),v:sp,ph:Math.random()*2,wob:Math.random()*6});
+}
+function demo(){bugs=[];for(let i=0;i<4;i++)bugs.push({x:GW*.4+i*GW*.13,y:50+((i*97)%Math.max(60,GH-110)),v:0,ph:i,wob:i});gDraw(performance.now());}
+function gLoop(now){
+  if(!playing) return;
+  const dt=Math.min(.05,(now-lastT)/1000);lastT=now;
+  timeLeft-=dt;spawnT-=dt;
+  if(spawnT<=0){gSpawn();spawnT=Math.max(.32,.9-(30-timeLeft)*.02);}
+  bugs.forEach(b=>{b.x-=b.v*dt;b.y+=Math.sin(now/240+b.wob)*.6;});
+  const limit=SRV_X()+8*(GU+2)+10;
+  bugs=bugs.filter(b=>{if(b.x<limit){lives--;flash=1;beep(110,.18,'sawtooth',.05);return false;}return true;});
+  parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=500*dt;p.life-=dt;});parts=parts.filter(p=>p.life>0);
+  flash=Math.max(0,flash-dt*3);
+  gScore.textContent=score;gLives.textContent='♥'.repeat(Math.max(0,lives))+'·'.repeat(3-Math.max(0,lives));gTime.textContent=Math.max(0,Math.ceil(timeLeft));
+  gDraw(now);
+  if(lives<=0||timeLeft<=0){gEnd(lives<=0);return;}
+  requestAnimationFrame(gLoop);
+}
+function gBegin(){
+  gLayout();bugs=[];parts=[];score=0;lives=3;timeLeft=30;spawnT=0;flash=0;playing=true;
+  gOver.hidden=true;lastT=performance.now();jingle([330,440,660]);requestAnimationFrame(gLoop);
+}
+function gEnd(dead){
+  playing=false;
+  const record=score>best;
+  if(record){best=score;bestEl.textContent=best;try{localStorage.setItem('ik-best',best);}catch(e){}}
+  gTitle.textContent=dead?'Producción caída':'¡Tiempo!';
+  gText.textContent=dead?'Tres bugs llegaron al servidor. Toca hotfix.':'Sobreviviste al deploy del viernes.';
+  gFinal.hidden=false;gFinal.textContent=score+' puntos'+(record?' · ¡nuevo récord!':'');
+  gStart.textContent='▶ Jugar de nuevo';gOver.hidden=false;
+  jingle(dead?[392,330,262]:[523,659,784,1047]);
+  if(score>=200&&secret('cazador')) toast('Secreto: cazador de bugs');
+}
+gc.addEventListener('pointerdown',e=>{
+  if(!playing) return;
+  const r=gc.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  let hit=false;
+  bugs=bugs.filter(b=>{
+    if(!hit&&Math.abs(b.x-x)<GU*6&&Math.abs(b.y-y)<GU*6){
+      hit=true;score+=10;beep(990,.05);
+      for(let i=0;i<10;i++)parts.push({x:b.x,y:b.y,vx:(Math.random()-.5)*260,vy:-Math.random()*220,life:.45,c:i%2?BUGC.b:C.warn});
+      return false;
+    }
+    return true;
+  });
+  if(!hit) beep(200,.03);
+});
+gStart.addEventListener('click',gBegin);
+gLayout();
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{if(!playing)demo();});
+demo();
+addEventListener('resize',()=>{gLayout();if(!playing)demo();});
+
+})();
+</script>
+</body>
+</html>
